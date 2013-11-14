@@ -1,0 +1,4 @@
+#define MAX_BUFFER_SIZE 1048576
+
+#define USE_PORTAL
+//#define USE_CHANNEL
