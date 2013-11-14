@@ -39,4 +39,4 @@ plot_latency <- function (f, er, scale) {
 #plot_latency ("channel-1-16.pdf", "channel-1-16.csv", seq(0, 224000, 16000))
 #plot_latency ("portal-1-1.pdf", "portal-1-1.csv", seq(0, 100000, 2000))
 
-plot_latency ("plot.pdf", "data.csv")
+plot_latency ("plot.pdf", "data.csv", NULL)
