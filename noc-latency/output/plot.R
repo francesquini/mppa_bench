@@ -25,6 +25,7 @@ plot_latency <- function (f, er, scale) {
     x <- ddply (x, .(direction, size), summarise, e = error (time, 0.95), time = mean (time))
     plot <- ggplot (x, aes (factor (size), time, group = direction, colour = direction)) +
     theme_bw () +
+    geom_point() +
     geom_line () +
     # displays nice confidence interval
     geom_ribbon (aes (ymin = time + e, ymax = time - e, 
