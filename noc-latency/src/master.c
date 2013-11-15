@@ -57,16 +57,18 @@ main(int argc, char **argv)
 
 #ifdef USE_PORTAL
 	char *comm_buffer = (char *) malloc(nb_clusters * MAX_BUFFER_SIZE);
+	assert(comm_buffer != NULL);
+
+	for(i = 0; i < nb_clusters * MAX_BUFFER_SIZE; i++)
+		comm_buffer[i] = 0;
 #endif
 #ifdef USE_CHANNEL
 	char *comm_buffer = (char *) malloc(MAX_BUFFER_SIZE);
-#endif	
 	assert(comm_buffer != NULL);
 
 	for(i = 0; i < MAX_BUFFER_SIZE; i++)
 		comm_buffer[i] = 0;
-
-	// printf("Number of clusters: %d\n", nb_clusters);
+#endif	
 
 	// Initialize global barrier
 	barrier_t *global_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
@@ -115,9 +117,11 @@ main(int argc, char **argv)
 			start_time = mppa_get_time();
 			for (j = 0; j < nb_clusters; j++)
 				mppa_write_portal(write_portals[j], comm_buffer, i, 0);
+
 			mppa_barrier_wait(global_barrier); 
+
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("P;%d;%d;%d;%llu\n", nb_exec, 0, i, exec_time);
+			printf ("portal;%d;%s;%d;%llu\n", nb_exec, "master-slave", i, exec_time);
 
 			mppa_barrier_wait(global_barrier);
 
@@ -125,9 +129,11 @@ main(int argc, char **argv)
 			start_time = mppa_get_time();
 			// // Block until IO-node has sent a message to the cluster
 			mppa_aio_wait_portal(read_portal);
+
 			mppa_barrier_wait(global_barrier); 
+
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("P;%d;%d;%d;%llu\n", nb_exec, 1, i, exec_time);
+			printf ("portal;%d;%s;%d;%llu\n", nb_exec, "slave-master", i, exec_time);
 #endif
 
 
@@ -139,7 +145,7 @@ main(int argc, char **argv)
 			for (j = 0; j < nb_clusters; j++)
 				mppa_write_channel(write_channels[j], comm_buffer, i);
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("C;%d;%d;%d;%llu\n", nb_exec, 0, i, exec_time);
+			printf ("channel;%d;%s;%d;%llu\n", nb_exec, "master-slave", i, exec_time);
 			
 			mppa_barrier_wait(global_barrier);
 			
@@ -148,7 +154,7 @@ main(int argc, char **argv)
 			for (j = 0; j < nb_clusters; j++)
 				mppa_read_channel(read_channels[j], comm_buffer, i);
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("C;%d;%d;%d;%llu\n", nb_exec, 1, i, exec_time);
+			printf ("channel;%d;%s;%d;%llu\n", nb_exec, "slave-master", i, exec_time);
 #endif
 
 		}
