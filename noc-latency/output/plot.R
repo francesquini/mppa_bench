@@ -23,12 +23,12 @@ plot_latency <- function (f, er, scale) {
     x <- read_latency (er)
     # inserts error column for obtaining an 95% conf. interval
     x <- ddply (x, .(direction, size), summarise, e = error (time, 0.95), time = mean (time))
-    plot <- ggplot (x, aes (factor (size), time, group = direction, colour = factor(direction, labels=c("master-slave","slave-master")))) +
+    plot <- ggplot (x, aes (factor (size), time, group = direction, colour = direction)) +
     theme_bw () +
     geom_line () +
     # displays nice confidence interval
     geom_ribbon (aes (ymin = time + e, ymax = time - e, 
-    				  fill = factor(direction, labels=c("master-slave","slave-master"))),
+    				  fill = direction),
                  	  alpha = 0.2, linetype = 0) +
     guides(fill=FALSE) +
     xlab ("Number of bytes") +
@@ -44,7 +44,7 @@ plot_latency <- function (f, er, scale) {
 
 	plot
 	
-    ggsave (f)
+    ggsave (f)    
 }
 
 #------------------------------------------------------------------------------
@@ -57,3 +57,5 @@ plot_latency ("plot.pdf", "data.csv", NULL)
 #plot_latency ("channel-1-8.pdf", "channel-1-8.csv", seq(0, 112000, 8000))
 #plot_latency ("channel-1-16.pdf", "channel-1-16.csv", seq(0, 224000, 16000))
 #plot_latency ("portal-1-1.pdf", "portal-1-1.csv", seq(0, 100000, 3000))
+
+file.remove("./Rplots.pdf")
