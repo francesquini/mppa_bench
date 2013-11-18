@@ -29,6 +29,7 @@ spawn_slaves(const char slave_bin_name[], int nb_clusters, int nb_threads)
 		sprintf(argv_slave[2], "%d", cluster_id);
 		pid = mppa_spawn(cluster_id, NULL, slave_bin_name, (const char **)argv_slave, NULL);
 		assert(pid >= 0);
+		LOG("Spawned Cluster %d\n", cluster_id);
 	}
 
 	// Free arguments
@@ -55,25 +56,27 @@ main(int argc, char **argv)
 
 	nb_clusters = atoi(argv[1]);
 
+
 #ifdef USE_PORTAL
-	char *comm_buffer = (char *) malloc(nb_clusters * MAX_BUFFER_SIZE);
+	const int comm_buffer_size = nb_clusters * MAX_BUFFER_SIZE;
 #endif
 #ifdef USE_CHANNEL
-	char *comm_buffer = (char *) malloc(MAX_BUFFER_SIZE);
+	const int comm_buffer_size = MAX_BUFFER_SIZE;
 #endif	
+	char *comm_buffer = (char *) malloc(comm_buffer_size);
 	assert(comm_buffer != NULL);
 
-	for(i = 0; i < MAX_BUFFER_SIZE; i++)
+	for(i = 0; i < comm_buffer_size; i++)
 		comm_buffer[i] = 0;
 
-	// printf("Number of clusters: %d\n", nb_clusters);
+	LOG("Number of clusters: %d\n", nb_clusters);
 
 	// Initialize global barrier
 	barrier_t *global_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
 	
 #ifdef USE_PORTAL
 	// Initialize communication portal to receive messages from clusters
-	portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:2", comm_buffer, nb_clusters * MAX_BUFFER_SIZE, nb_clusters, NULL);
+	portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:2", comm_buffer, comm_buffer_size, nb_clusters, NULL);
 
 	// Initialize communication portals to send messages to clusters (one portal per cluster)
 	portal_t **write_portals = (portal_t **) malloc (sizeof(portal_t *) * nb_clusters);
@@ -105,26 +108,31 @@ main(int argc, char **argv)
 	spawn_slaves("slave", nb_clusters, 1);
 
 	int nb_exec;
-	for (nb_exec = 1; nb_exec <= 30; nb_exec++) {
+	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
 		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 
 #ifdef USE_PORTAL
+			// LOG("MASTER: 1 barrier\n");
 			mppa_barrier_wait(global_barrier); 
 
 			// ----------- MASTER -> SLAVE ---------------	
 			start_time = mppa_get_time();
 			for (j = 0; j < nb_clusters; j++)
-				mppa_write_portal(write_portals[j], comm_buffer, i, 0);
+				mppa_write_portal(write_portals[j], comm_buffer + (MAX_BUFFER_SIZE * j), i, 0);
+			// LOG("MASTER: 2 barrier\n");			
 			mppa_barrier_wait(global_barrier); 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
 			printf ("P;%d;%d;%d;%llu\n", nb_exec, 0, i, exec_time);
 
+			// LOG("MASTER: 3 barrier\n");
 			mppa_barrier_wait(global_barrier);
+			
 
 			// ----------- SLAVE -> MASTER ---------------	
 			start_time = mppa_get_time();
 			// // Block until IO-node has sent a message to the cluster
 			mppa_aio_wait_portal(read_portal);
+			// LOG("MASTER: 4 barrier\n");
 			mppa_barrier_wait(global_barrier); 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
 			printf ("P;%d;%d;%d;%llu\n", nb_exec, 1, i, exec_time);

@@ -24,7 +24,8 @@ int main(int argc,char **argv) {
 	// Initialize global barrier
 	barrier_t *global_barrier = mppa_create_slave_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
 	
-#ifdef USE_PORTAL	
+#ifdef USE_PORTAL
+	LOG("Creating portals\n");	
 	// Initialize communication portals
 	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2");	
 	// Initialize communication portal to receive messages from IO-node
@@ -41,21 +42,28 @@ int main(int argc,char **argv) {
 
 	// mppa_init_time();
 	int nb_exec;
-	for (nb_exec = 1; nb_exec <= 30; nb_exec++) {
+	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
 		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 
 #ifdef USE_PORTAL
+			// LOG("SLAVE: 1 barrier\n");
 			mppa_barrier_wait(global_barrier); 
 
 			// // ----------- MASTER -> SLAVE ---------------
 			// Block until IO-node have sent a message to the cluster
+			LOG("01234567890123456789012345678901\n"); //32 bytes
+			// LOG("Master->Slave. nb_exec: %d buffer_size: %d\n", nb_exec, i);
 			mppa_aio_wait_portal(read_portal);
+			// LOG("SLAVE: 2 barrier\n");
 			mppa_barrier_wait(global_barrier); //end tx
 
+			// LOG("SLAVE: 3 barrier\n");
 			mppa_barrier_wait(global_barrier); //wait to start next step
 
 			// // ----------- SLAVE -> MASTER ---------------
+			// LOG("Slave->Master nb_exec: %d buffer_size: %d\n", nb_exec, i);
 			mppa_write_portal(write_portal, comm_buffer, i, cluster_id * MAX_BUFFER_SIZE);
+			// LOG("SLAVE: 4 barrier\n");
 			mppa_barrier_wait(global_barrier); 
 #endif
 
