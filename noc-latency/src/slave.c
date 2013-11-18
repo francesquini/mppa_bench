@@ -7,7 +7,6 @@
 int main(int argc,char **argv) {
 	char path[25];
 	int i;
-	// uint64_t start_time, exec_time;
 
 	// Global data
 	char *comm_buffer = (char *) malloc(MAX_BUFFER_SIZE);
@@ -40,7 +39,6 @@ int main(int argc,char **argv) {
 	channel_t *write_channel = mppa_create_write_channel(path);
 #endif
 
-	// mppa_init_time();
 	int nb_exec;
 	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
 		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
