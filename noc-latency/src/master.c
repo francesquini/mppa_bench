@@ -58,33 +58,18 @@ main(int argc, char **argv)
 
 
 #ifdef USE_PORTAL
-<<<<<<< HEAD:master.c
 	const int comm_buffer_size = nb_clusters * MAX_BUFFER_SIZE;
 #endif
 #ifdef USE_CHANNEL
 	const int comm_buffer_size = MAX_BUFFER_SIZE;
 #endif	
 	char *comm_buffer = (char *) malloc(comm_buffer_size);
-=======
-	char *comm_buffer = (char *) malloc(nb_clusters * MAX_BUFFER_SIZE);
-	assert(comm_buffer != NULL);
-
-	for(i = 0; i < nb_clusters * MAX_BUFFER_SIZE; i++)
-		comm_buffer[i] = 0;
-#endif
-#ifdef USE_CHANNEL
-	char *comm_buffer = (char *) malloc(MAX_BUFFER_SIZE);
->>>>>>> 60d74b5ea16f73a109ec2429e5f10b6b95cf2e1c:noc-latency/src/master.c
 	assert(comm_buffer != NULL);
 
 	for(i = 0; i < comm_buffer_size; i++)
 		comm_buffer[i] = 0;
-<<<<<<< HEAD:master.c
 
 	LOG("Number of clusters: %d\n", nb_clusters);
-=======
-#endif	
->>>>>>> 60d74b5ea16f73a109ec2429e5f10b6b95cf2e1c:noc-latency/src/master.c
 
 	// Initialize global barrier
 	barrier_t *global_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
@@ -133,13 +118,8 @@ main(int argc, char **argv)
 			// ----------- MASTER -> SLAVE ---------------	
 			start_time = mppa_get_time();
 			for (j = 0; j < nb_clusters; j++)
-<<<<<<< HEAD:master.c
 				mppa_write_portal(write_portals[j], comm_buffer + (MAX_BUFFER_SIZE * j), i, 0);
 			// LOG("MASTER: 2 barrier\n");			
-=======
-				mppa_write_portal(write_portals[j], comm_buffer, i, 0);
-
->>>>>>> 60d74b5ea16f73a109ec2429e5f10b6b95cf2e1c:noc-latency/src/master.c
 			mppa_barrier_wait(global_barrier); 
 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
@@ -153,11 +133,7 @@ main(int argc, char **argv)
 			start_time = mppa_get_time();
 			// // Block until IO-node has sent a message to the cluster
 			mppa_aio_wait_portal(read_portal);
-<<<<<<< HEAD:master.c
 			// LOG("MASTER: 4 barrier\n");
-=======
-
->>>>>>> 60d74b5ea16f73a109ec2429e5f10b6b95cf2e1c:noc-latency/src/master.c
 			mppa_barrier_wait(global_barrier); 
 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
