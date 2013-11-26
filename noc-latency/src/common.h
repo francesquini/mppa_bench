@@ -3,7 +3,8 @@
 #define MB 1024 * KB
 
 #define MAX_BUFFER_SIZE 1 * MB
-#define NB_EXEC 5
+// #define MAX_BUFFER_SIZE 64
+#define NB_EXEC 1
 
 //
 #define USE_PORTAL

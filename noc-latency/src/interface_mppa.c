@@ -15,39 +15,45 @@ portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffe
 	ret->file_descriptor = mppa_open(path, O_RDONLY);
 	assert(ret->file_descriptor != -1);
 	
-	mppa_aiocb_t tmp = MPPA_AIOCB_INITIALIZER(ret->file_descriptor, buffer, buffer_size);
-	memcpy(&ret->portal, &tmp, sizeof(mppa_aiocb_t));
+	mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size);
 	
 	if (trigger > -1) {
-		mppa_aiocb_set_trigger(&ret->portal, trigger);
+		mppa_aiocb_set_trigger(&ret->aiocb, trigger);
 	}
 
 	// Attention: we can't use callbacks with trigger/mppa_aio_wait (bug?)
 	if (function)
-		mppa_aiocb_set_callback(&ret->portal, function);
+		mppa_aiocb_set_callback(&ret->aiocb, function);
 	
-	status = mppa_aio_read(&ret->portal);
+	status = mppa_aio_read(&ret->aiocb);
 	assert(status == 0);
 
 	return ret;
 }
 
-portal_t *mppa_create_write_portal (char *path) {	
+portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size) {	
 	portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
 	ret->file_descriptor = mppa_open(path, O_WRONLY);
 	assert(ret->file_descriptor != -1);
+
+	mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size);
 
    	return ret;
 }
 
 int mppa_get_trigger_portal(portal_t *portal) {
-	return mppa_aiocb_trigger(&portal->portal);
+	return mppa_aiocb_trigger(&portal->aiocb);
 }
 
-void mppa_aio_wait_portal(portal_t *portal) {
+void mppa_async_read_wait_portal(portal_t *portal) {
 	int status;
-	// status = mppa_aio_wait(&portal->portal);
-	status = mppa_aio_rearm(&portal->portal);
+	status = mppa_aio_rearm(&portal->aiocb);
+	assert(status != -1);
+}
+
+void mppa_async_write_wait_portal(portal_t *portal) {
+	int status;
+	status = mppa_aio_wait(&portal->aiocb);
 	assert(status != -1);
 }
 
@@ -61,6 +67,14 @@ void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int off
 	int status;
 	status = mppa_pwrite(portal->file_descriptor, buffer, buffer_size, offset);
 	assert(status == buffer_size);
+}
+
+void mppa_async_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
+	int status;
+	mppa_aiocb_set_pwrite(&portal->aiocb, buffer, buffer_size, offset);
+
+	while ((status = mppa_aio_write(&portal->aiocb)) == -EAGAIN);
+	assert(status == 0);
 }
 
 /**************************************
@@ -101,7 +115,7 @@ void mppa_close_channel (channel_t *channel) {
 
 
 /**************************************
- * BARRIER - INTERNAL
+ * BARRIER
  **************************************/
 
 barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int clusters) {
@@ -117,9 +131,9 @@ barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int 
 	ret->sync_fd_slave = mppa_open(path_slave, O_WRONLY);
 	assert(ret->sync_fd_slave != -1);
 
-	match = -1 << clusters;
-	status = mppa_ioctl(ret->sync_fd_master, MPPA_RX_SET_MATCH, match);
-	assert(status == 0);
+	match = (long long) - (1 << clusters);
+  	status = mppa_ioctl(ret->sync_fd_master, MPPA_RX_SET_MATCH, match);
+  	assert(status == 0);
 	
 	for (i = 0; i < clusters; i++)
 		ranks[i] = i;
@@ -157,19 +171,28 @@ void mppa_barrier_wait(barrier_t *barrier) {
 
 	if(barrier->mode == BARRIER_MASTER) {
 		dummy = -1;
-		status = mppa_read(barrier->sync_fd_master, &barrier->match, sizeof(long long));
-		assert(status == sizeof(long long));
+		long long match;
 
+		// printf("Master: barrier wait\n");
+		status = mppa_read(barrier->sync_fd_master, &match, sizeof(match));
+		assert(status == sizeof(match));
+		// printf("Master: barrier end\n");
+		
 		status = mppa_write(barrier->sync_fd_slave, &dummy, sizeof(long long));
 		assert(status == sizeof(long long));
 	}
 	else {
-		long long mask = (long long) 1 << __k1_get_cluster_id();
 		dummy = 0;
-		
-		status = mppa_write(barrier->sync_fd_master, &mask, sizeof(long long));
-		assert(status == sizeof(long long));
+		long long mask;
 
+		mask = 0;
+		mask |= 1 << __k1_get_cluster_id();
+
+		// printf("Slave: barrier wait\n");
+		status = mppa_write(barrier->sync_fd_master, &mask, sizeof(mask));
+		assert(status == sizeof(mask));
+		// printf("Slave: barrier end\n");
+		
 		status = mppa_read(barrier->sync_fd_slave, &dummy, sizeof(long long));
 		assert(status == sizeof(long long));
 	}

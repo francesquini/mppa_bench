@@ -13,8 +13,8 @@
  * GLOBAL CONSTANTS
  */
 
-#define BARRIER_SYNC_MASTER "/mppa/sync/128:126"
-#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:126"
+#define BARRIER_SYNC_MASTER "/mppa/sync/128:62"
+#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:63"
 
 #define TRUE 1
 #define FALSE 0
@@ -36,7 +36,7 @@ typedef enum {
 
 typedef struct {
 	int file_descriptor;
-	mppa_aiocb_t portal;
+	mppa_aiocb_t aiocb;
 } portal_t;
 
 typedef struct {
@@ -46,8 +46,8 @@ typedef struct {
 typedef struct {
 	int sync_fd_master;
 	int sync_fd_slave;
-	long long match;
-	barrier_mode_t mode; 
+	barrier_mode_t mode;
+	int nb_clusters;
 } barrier_t;
 
 /*
@@ -57,9 +57,13 @@ typedef struct {
 void set_path_name(char *path, char *template_path, int rx, int tag);
 
 portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t));
-portal_t *mppa_create_write_portal (char *path);
+portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size);
 void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
-void mppa_aio_wait_portal(portal_t *portal);
+
+void mppa_async_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
+void mppa_async_read_wait_portal(portal_t *portal);
+void mppa_async_write_wait_portal(portal_t *portal);
+
 int mppa_get_trigger_portal(portal_t *portal);
 void mppa_close_portal (portal_t *portal);
 

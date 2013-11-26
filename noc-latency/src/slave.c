@@ -1,8 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "interface_mppa.h"
+
+void
+print_buffer(char *buffer, int size, int cluster_id) 
+{
+	int i;
+	LOG("Slave %d buffer:\n", cluster_id);
+	for (i=0; i < size; i++)
+		LOG("%d ", buffer[i]);
+	LOG("\n");
+}
+
+void
+fill_buffer(char *buffer, int size, int cluster_id) {
+	int i;
+	for (i=0; i < size; i++)
+		buffer[i] = cluster_id + 1;
+}
 
 int main(int argc,char **argv) {
 	char path[25];
@@ -20,13 +38,13 @@ int main(int argc,char **argv) {
 	// int nb_threads  = atoi(argv[1]);
 	int cluster_id  = atoi(argv[2]);
 
-	// Initialize global barrier
-	barrier_t *global_barrier = mppa_create_slave_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
 	
 #ifdef USE_PORTAL
-	LOG("Creating portals\n");	
+	// Initialize global barrier
+	barrier_t *global_barrier = mppa_create_slave_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
+
 	// Initialize communication portals
-	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2");	
+	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2", comm_buffer, MAX_BUFFER_SIZE);	
 	// Initialize communication portal to receive messages from IO-node
 	sprintf(path, "/mppa/portal/%d:%d", cluster_id, 3 + cluster_id);
 	portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, MAX_BUFFER_SIZE, 1, NULL);
@@ -41,46 +59,41 @@ int main(int argc,char **argv) {
 
 	int nb_exec;
 	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
-		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 
 #ifdef USE_PORTAL
-			// LOG("SLAVE: 1 barrier\n");
-			mppa_barrier_wait(global_barrier); 
+		// ----------- MASTER -> SLAVE ---------------
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+			// Block until receive the asynchronous write and prepare for next asynchronous writes
+			mppa_async_read_wait_portal(read_portal);
+		}
 
-			// // ----------- MASTER -> SLAVE ---------------
-			// Block until IO-node have sent a message to the cluster
-			LOG("01234567890123456789012345678901\n"); //32 bytes
-			// LOG("Master->Slave. nb_exec: %d buffer_size: %d\n", nb_exec, i);
-			mppa_aio_wait_portal(read_portal);
-			// LOG("SLAVE: 2 barrier\n");
-			mppa_barrier_wait(global_barrier); //end tx
-
-			// LOG("SLAVE: 3 barrier\n");
-			mppa_barrier_wait(global_barrier); //wait to start next step
-
-			// // ----------- SLAVE -> MASTER ---------------
-			// LOG("Slave->Master nb_exec: %d buffer_size: %d\n", nb_exec, i);
-			mppa_write_portal(write_portal, comm_buffer, i, cluster_id * MAX_BUFFER_SIZE);
-			// LOG("SLAVE: 4 barrier\n");
-			mppa_barrier_wait(global_barrier); 
+		// ----------- SLAVE -> MASTER ---------------
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+			// fill_buffer(comm_buffer, i, cluster_id);
+			// post asynchronous write
+			mppa_async_write_portal(write_portal, comm_buffer, i, cluster_id * MAX_BUFFER_SIZE);
+		
+			// block until the asynchronous write has finished
+			mppa_async_write_wait_portal(write_portal);
+		}
 #endif
 
 #ifdef USE_CHANNEL
-			// ----------- MASTER -> SLAVE ---------------
-			mppa_barrier_wait(global_barrier); 
+		// ----------- MASTER -> SLAVE ---------------
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2)
 			mppa_read_channel(read_channel, comm_buffer, i);
-
-			// ----------- SLAVE -> MASTER ---------------
-			mppa_barrier_wait(global_barrier); 
+		
+		// ----------- SLAVE -> MASTER ---------------
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2)
 			mppa_write_channel(write_channel, comm_buffer, i);
 #endif			
-		}
 	}
 
+
+#ifdef USE_PORTAL	
 	// Free barrier and portals
 	mppa_close_barrier(global_barrier);
 
-#ifdef USE_PORTAL	
 	mppa_close_portal(write_portal);
 	mppa_close_portal(read_portal);
 #endif
@@ -89,6 +102,8 @@ int main(int argc,char **argv) {
 	mppa_close_channel(read_channel);
 	mppa_close_channel(write_channel);
 #endif
+
+	LOG("Slave %d finished\n", cluster_id);
 
 	mppa_exit(0);
 
