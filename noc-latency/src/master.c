@@ -115,14 +115,14 @@ main(int argc, char **argv)
 	// Spawn slave processes
 	spawn_slaves("slave", nb_clusters, 1);
 
+	// wait clusters to be blocked before starting time measurements
+	sleep(2);
+
 	int nb_exec;
 	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
 
 #ifdef USE_PORTAL
 		print_buffer(comm_buffer, MAX_BUFFER_SIZE * nb_clusters);
-
-		// wait clusters to be blocked on mppa_async_read_wait_portal()
-		sleep(2);
 
 		// ----------- MASTER -> SLAVE ---------------	
 		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
@@ -156,9 +156,6 @@ main(int argc, char **argv)
 
 
 #ifdef USE_CHANNEL
-		// wait clusters to be blocked on mppa_read_channel()
-		sleep(2);
-
 		// ----------- MASTER -> SLAVE ---------------
 		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {				
 			start_time = mppa_get_time();
