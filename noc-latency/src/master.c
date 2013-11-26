@@ -83,9 +83,6 @@ main(int argc, char **argv)
 	LOG("Number of clusters: %d\n", nb_clusters);
 
 #ifdef USE_PORTAL
-	// Initialize global barrier
-	barrier_t *global_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
-
 	// Initialize communication portal to receive messages from clusters
 	portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:2", comm_buffer, MAX_BUFFER_SIZE * nb_clusters, nb_clusters, NULL);
 
@@ -200,10 +197,6 @@ main(int argc, char **argv)
 	LOG("MASTER: clusters finished\n");
 
 #ifdef USE_PORTAL
-
-	// Free barrier and portals
-	mppa_close_barrier(global_barrier);
-
 	mppa_close_portal(read_portal);
 	for (i = 0; i < nb_clusters; i++)
 		mppa_close_portal(write_portals[i]);

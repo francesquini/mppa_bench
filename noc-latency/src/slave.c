@@ -40,9 +40,6 @@ int main(int argc,char **argv) {
 
 	
 #ifdef USE_PORTAL
-	// Initialize global barrier
-	barrier_t *global_barrier = mppa_create_slave_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
-
 	// Initialize communication portals
 	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2", comm_buffer, MAX_BUFFER_SIZE);	
 	// Initialize communication portal to receive messages from IO-node
@@ -90,10 +87,7 @@ int main(int argc,char **argv) {
 	}
 
 
-#ifdef USE_PORTAL	
-	// Free barrier and portals
-	mppa_close_barrier(global_barrier);
-
+#ifdef USE_PORTAL
 	mppa_close_portal(write_portal);
 	mppa_close_portal(read_portal);
 #endif
