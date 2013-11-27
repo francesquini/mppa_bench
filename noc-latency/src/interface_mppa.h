@@ -50,6 +50,10 @@ typedef struct {
 	int nb_clusters;
 } barrier_t;
 
+typedef struct {
+	int file_descriptor;
+} rqueue_t;
+
 /*
  * FUNCTIONS
  */
@@ -59,14 +63,11 @@ void set_path_name(char *path, char *template_path, int rx, int tag);
 portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t));
 portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size);
 void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
-
 void mppa_async_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
-void mppa_async_read_wait_portal(portal_t *portal);
 void mppa_async_write_wait_portal(portal_t *portal);
+void mppa_async_read_wait_portal(portal_t *portal);
 
-int mppa_get_trigger_portal(portal_t *portal);
 void mppa_close_portal (portal_t *portal);
-
 
 channel_t *mppa_create_read_channel (char *path);
 channel_t *mppa_create_write_channel (char *path);
@@ -74,11 +75,17 @@ void mppa_write_channel (channel_t *channel, void *buffer, int buffer_size);
 void mppa_read_channel (channel_t *channel, void *buffer, int buffer_size);
 void mppa_close_channel (channel_t *channel);
 
-
 barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int clusters);
 barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave);
 void mppa_barrier_wait (barrier_t *barrier);
 void mppa_close_barrier (barrier_t *barrier);
+
+rqueue_t *mppa_create_read_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag);
+void mppa_init_read_rqueue(rqueue_t *rqueue, int credit);
+rqueue_t *mppa_create_write_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag);
+void mppa_read_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size);
+void mppa_write_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size);
+void mppa_close_rqueue(rqueue_t *rqueue);
 
 void mppa_init_time(void);
 inline uint64_t mppa_get_time(void);

@@ -36,13 +36,13 @@ portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buff
 	ret->file_descriptor = mppa_open(path, O_WRONLY);
 	assert(ret->file_descriptor != -1);
 
-	mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size);
+	// we need to initialize an aiocb for asynchronous writes.
+	// it seems that the buffer and buffer size parameters are not important here,
+	// because we're going to specify them with mppa_aiocb_set_pwrite()
+	// before calling mppa_aio_write()
+	assert(mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size) == &ret->aiocb);
 
    	return ret;
-}
-
-int mppa_get_trigger_portal(portal_t *portal) {
-	return mppa_aiocb_trigger(&portal->aiocb);
 }
 
 void mppa_async_read_wait_portal(portal_t *portal) {
@@ -53,17 +53,19 @@ void mppa_async_read_wait_portal(portal_t *portal) {
 
 void mppa_async_write_wait_portal(portal_t *portal) {
 	int status;
-	status = mppa_aio_wait(&portal->aiocb);
+
+	while(mppa_aio_error(&portal->aiocb) == EINPROGRESS);
+
+	status = mppa_aio_return(&portal->aiocb);
 	assert(status != -1);
 }
 
 void mppa_close_portal (portal_t *portal) {
-	assert(mppa_close (portal->file_descriptor) != -1);
+	assert(mppa_close(portal->file_descriptor) != -1);
 	free (portal);
 }
 
 void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
-	// printf("Cluster %d will write.\n", __k1_get_cluster_id());
 	int status;
 	status = mppa_pwrite(portal->file_descriptor, buffer, buffer_size, offset);
 	assert(status == buffer_size);
@@ -204,6 +206,53 @@ void mppa_close_barrier (barrier_t *barrier) {
 	free(barrier);
 }
 
+/**************************************
+ * RQUEUE COMMUNICATION
+ **************************************/
+
+rqueue_t *mppa_create_read_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag) {
+	rqueue_t *ret = (rqueue_t *) malloc (sizeof(rqueue_t));
+	char path_name[256];
+	
+	sprintf(path_name, "/mppa/queue.%d/%d:%d/%s:%d", message_size, rx_id, rx_tag, tx_ids, tx_tag);
+	ret->file_descriptor = mppa_open(path_name, O_RDONLY);
+	assert(ret->file_descriptor != -1);
+
+	return ret;
+}
+
+void mppa_init_read_rqueue(rqueue_t *rqueue, int credit) {
+	int status = mppa_ioctl(rqueue->file_descriptor, MPPA_RX_SET_CREDITS, credit);
+	assert(status == 0);
+}
+
+rqueue_t *mppa_create_write_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag) {
+	rqueue_t *ret = (rqueue_t *) malloc (sizeof(rqueue_t));
+	char path_name[256];
+	
+	sprintf(path_name, "/mppa/queue.%d/%d:%d/%s:%d", message_size, rx_id, rx_tag, tx_ids, tx_tag);
+	ret->file_descriptor = mppa_open(path_name, O_WRONLY);
+	assert(ret->file_descriptor != -1);
+
+	return ret;
+}
+
+void mppa_read_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size) {
+	int status;
+	status = mppa_read(rqueue->file_descriptor, buffer, buffer_size);
+	assert(status == buffer_size);
+}
+
+void mppa_write_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size) {
+	int status;
+	status = mppa_write(rqueue->file_descriptor, buffer, buffer_size);
+	assert(status == buffer_size);
+}
+
+void mppa_close_rqueue(rqueue_t *rqueue) {
+	assert(mppa_close (rqueue->file_descriptor) != -1);
+	free (rqueue);
+}
 
 /**************************************
  * TIME

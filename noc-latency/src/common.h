@@ -3,7 +3,6 @@
 #define MB 1024 * KB
 
 #define MAX_BUFFER_SIZE 1 * MB
-// #define MAX_BUFFER_SIZE 64
 #define NB_EXEC 1
 
 //
@@ -15,3 +14,7 @@
 #else
 #define LOG(...) 
 #endif //DEBUG
+
+typedef struct {
+	int cluster_id;
+} rqueue_msg_t;
