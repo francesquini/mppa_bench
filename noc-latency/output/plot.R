@@ -23,7 +23,7 @@ plot_latency <- function (f, er, scale) {
     x <- read_latency (er)
     # inserts error column for obtaining an 95% conf. interval
     x <- ddply (x, .(direction, size), summarise, e = error (time, 0.95), time = mean (time))
-    plot <- ggplot (x, aes (factor (size), time, group = direction, colour = direction)) +
+    plot <- ggplot (x, aes (factor (size), time, group = direction, colour = direction, shape = direction)) +
     theme_bw () +
     geom_point() +
     geom_line () +
@@ -57,6 +57,12 @@ plot_latency ("plot.pdf", "data.csv", NULL)
 #plot_latency ("channel-1-4.pdf", "channel-1-4.csv", seq(0, 56000, 4000))
 #plot_latency ("channel-1-8.pdf", "channel-1-8.csv", seq(0, 112000, 8000))
 #plot_latency ("channel-1-16.pdf", "channel-1-16.csv", seq(0, 224000, 16000))
-#plot_latency ("portal-1-1.pdf", "portal-1-1.csv", seq(0, 100000, 3000))
+
+#plot_latency ("portal-async-1-1.pdf", "portal-async-1-1.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-2.pdf", "portal-async-1-2.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-4.pdf", "portal-async-1-4.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-8.pdf", "portal-async-1-8.csv", seq(0, 14000, 600))
+#plot_latency ("portal-async-1-16.pdf", "portal-async-1-16.csv", seq(0, 14000, 800))
+
 
 file.remove("./Rplots.pdf")
