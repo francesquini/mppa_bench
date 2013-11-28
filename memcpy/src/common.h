@@ -2,9 +2,7 @@
 
 #define KB 1024
 #define MB 1024 * KB
-#define MAX_BUFFER_SIZE 16 * MB
-
-#define NUMBER_RUNS 3
+#define MAX_BUFFER_SIZE 4 * MB
 
 // residual error to calibrate timers
 static uint64_t residual_error = 0;
@@ -14,6 +12,8 @@ static uint64_t residual_error = 0;
 	#include <mppaipc.h>
 
 	#define MPPA_FREQUENCY 400
+
+	#define NUMBER_RUNS 10
 
 	// Timer functions
 	inline uint64_t 
@@ -43,6 +43,8 @@ static uint64_t residual_error = 0;
 
 #else //x86
 	#include <sys/time.h>
+
+	#define NUMBER_RUNS 30
 
 	// Timer functions
 	inline uint64_t 
