@@ -28,9 +28,9 @@ plot_latency <- function (f, er, scale) {
     geom_point() +
     geom_line () +
     # displays nice confidence interval
-    geom_ribbon (aes (ymin = time + e, ymax = time - e, 
-    				  fill = direction),
-                 	  alpha = 0.2, linetype = 0) +
+    geom_ribbon (aes (ymin = time + e, ymax = time - e,
+    		     	       fill = direction),
+                 	         alpha = 0.2, linetype = 0) +
     guides(fill=FALSE) +
     xlab ("Number of bytes") +
     ylab ("Time (us)") +
@@ -40,34 +40,26 @@ plot_latency <- function (f, er, scale) {
            legend.direction = "vertical",
            axis.text.x = element_text(angle = 45, hjust = 1))
 
-	if ( !is.null(scale) )
-		plot <- plot + scale_y_continuous(breaks = c(scale))
+	   if ( !is.null(scale) )
+	      plot <- plot + scale_y_continuous(breaks = c(scale))
 
-	plot
-	
-    ggsave (f)    
+	      plot
+
+    ggsave (f)
 }
 
 #------------------------------------------------------------------------------
 
-#plot_latency ("plot.pdf", "data.csv", NULL)
+plot_latency ("plot.pdf", "data.csv", NULL)
 
-plot_latency ("channel-1-1.pdf", "channel-1-1.csv", seq(0, 14000, 1000))
-plot_latency ("channel-1-2.pdf", "channel-1-2.csv", seq(0, 28000, 2000))
-plot_latency ("channel-1-4.pdf", "channel-1-4.csv", seq(0, 56000, 4000))
-plot_latency ("channel-1-8.pdf", "channel-1-8.csv", seq(0, 112000, 8000))
-plot_latency ("channel-1-16.pdf", "channel-1-16.csv", seq(0, 224000, 16000))
+#plot_latency ("channel-1-1.pdf", "channel-1-1.csv", seq(0, 14000, 1000))
+#plot_latency ("channel-1-2.pdf", "channel-1-2.csv", seq(0, 28000, 2000))
+#plot_latency ("channel-1-4.pdf", "channel-1-4.csv", seq(0, 56000, 4000))
+#plot_latency ("channel-1-8.pdf", "channel-1-8.csv", seq(0, 112000, 8000))
+#plot_latency ("channel-1-16.pdf", "channel-1-16.csv", seq(0, 224000, 16000))
 
-plot_latency ("portal-1-1.pdf", "portal-1-1.csv", seq(0, 3300, 300))
-plot_latency ("portal-1-2.pdf", "portal-1-2.csv", seq(0, 6000, 600))
-plot_latency ("portal-1-8.pdf", "portal-1-8.csv", seq(0, 12000, 900))
-plot_latency ("portal-1-16.pdf", "portal-1-16.csv", seq(0, 24000, 1300))
-
-plot_latency ("portal-async-1-1.pdf", "portal-async-1-1.csv", seq(0, 14000, 400))
-plot_latency ("portal-async-1-2.pdf", "portal-async-1-2.csv", seq(0, 14000, 400))
-plot_latency ("portal-async-1-4.pdf", "portal-async-1-4.csv", seq(0, 14000, 400))
-plot_latency ("portal-async-1-8.pdf", "portal-async-1-8.csv", seq(0, 14000, 600))
-plot_latency ("portal-async-1-16.pdf", "portal-async-1-16.csv", seq(0, 14000, 800))
-
-
-file.remove("./Rplots.pdf")
+#plot_latency ("portal-async-1-1.pdf", "portal-async-1-1.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-2.pdf", "portal-async-1-2.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-4.pdf", "portal-async-1-4.csv", seq(0, 14000, 400))
+#plot_latency ("portal-async-1-8.pdf", "portal-async-1-8.csv", seq(0, 14000, 600))
+#plot_latency ("portal-async-1-16.pdf", "portal-async-1-16.csv", seq(0, 14000, 800))
