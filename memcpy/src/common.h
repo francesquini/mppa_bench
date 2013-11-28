@@ -4,7 +4,7 @@
 #define MB 1024 * KB
 #define MAX_BUFFER_SIZE 16 * MB
 
-#define NUMBER_RUNS 1
+#define NUMBER_RUNS 3
 
 // residual error to calibrate timers
 static uint64_t residual_error = 0;
