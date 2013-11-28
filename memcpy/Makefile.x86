@@ -1,0 +1,12 @@
+
+IMAGE=memcpy
+SRC=main
+# DEBUG=-DDEBUG
+DEBUG=
+
+$(IMAGE): src/$(SRC).c
+	mkdir -p bin/
+	gcc -Wall $(DEBUG) src/$(SRC).c  -o bin/$(IMAGE)
+
+clean:
+	rm -f *~ bin/$(IMAGE)
