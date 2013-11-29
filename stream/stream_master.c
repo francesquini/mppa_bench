@@ -95,7 +95,7 @@
  */
 #ifndef STREAM_ARRAY_SIZE
 // #   define STREAM_ARRAY_SIZE	10000000
-#   define STREAM_ARRAY_SIZE	70000
+#   define STREAM_ARRAY_SIZE	500000
 #endif
 
 /*  2) STREAM runs each kernel "NTIMES" times and reports the *best* result
