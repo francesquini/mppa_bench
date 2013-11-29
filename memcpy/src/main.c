@@ -13,6 +13,22 @@ init_buffer(char *buffer, int size)
 		buffer[i] = 0;
 }
 
+
+void my_memcpy(void *to_buffer, void *from_buffer, int size) {
+  portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:2", to_buffer, size, 1, NULL);
+  portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2", from_buffer, size);
+  // post asynchronous write                                          
+  mppa_async_write_portal(write_portal, from_buffer, size, 0);
+  // wait for the end of the transfer                                 
+  mppa_async_write_wait_portal(write_portal);
+  // prepare for next read                                            
+  mppa_async_read_wait_portal(read_portal);
+  mppa_close_portal(read_portal);
+  mppa_close_portal(write_portal);
+}
+
+
+
 int
 main(int argc, char **argv) 
 {
@@ -65,6 +81,17 @@ main(int argc, char **argv)
 
 	mppa_close_portal(read_portal);
 	mppa_close_portal(write_portal);
+#endif
+
+#ifdef MPPA
+        for (nb_runs = 1; nb_runs <= NUMBER_RUNS; nb_runs++) {
+	  for (size = 128 * KB; size <= MAX_BUFFER_SIZE; size += 128 * KB) {
+	    START_TIMER();
+	    my_memcpy(to_buffer, from_buffer, size);
+	    STOP_TIMER();
+	    PRINT_TIMER(nb_runs, "mppa-io-my_memcpy", size/base);
+	  }
+        }
 #endif
 
 	FINALIZE();
