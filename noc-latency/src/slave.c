@@ -22,28 +22,33 @@ int main(int argc,char **argv) {
 	// int nb_threads  = atoi(argv[1]);
 	int cluster_id  = atoi(argv[2]);
 
-#ifdef USE_PORTAL
 	// Initialize global barrier
 	barrier_t *global_barrier = mppa_create_slave_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
-	
+
+#ifdef USE_PORTAL	
 	// Initialize communication portals
-	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:2", comm_buffer, MAX_BUFFER_SIZE);	
+	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:3", comm_buffer, MAX_BUFFER_SIZE);	
 	
 	// Initialize communication portal to receive messages from IO-node
-	sprintf(path, "/mppa/portal/%d:%d", cluster_id, 3 + cluster_id);
+	sprintf(path, "/mppa/portal/%d:%d", cluster_id, 4 + cluster_id);
 	portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, MAX_BUFFER_SIZE, 1, NULL);
 #endif	
 
 #ifdef USE_CHANNEL
-	sprintf(path, "/mppa/channel/%d:%d/%d:%d", cluster_id, cluster_id + 1, 128, cluster_id + 17);
+	int nb_clusters = atoi(argv[0]);
+	int base_tag;
+	
+	base_tag = 3;
+	sprintf(path, "/mppa/channel/%d:%d/%d:%d", cluster_id, base_tag + cluster_id, 128, (base_tag + cluster_id) + nb_clusters);
 	channel_t *read_channel = mppa_create_read_channel(path);
-	sprintf(path, "/mppa/channel/%d:%d/%d:%d", 128, cluster_id + 34, cluster_id, cluster_id + 50);
+
+	base_tag = 3 + (2 * nb_clusters);	
+	sprintf(path, "/mppa/channel/%d:%d/%d:%d", 128, base_tag + cluster_id, cluster_id, (base_tag + cluster_id) + nb_clusters);
 	channel_t *write_channel = mppa_create_write_channel(path);
 #endif
 
-#ifdef USE_PORTAL
 	mppa_barrier_wait(global_barrier);
-#endif
+
 	LOG("Slave %d started\n", cluster_id);
 
 	int nb_exec;
@@ -81,8 +86,9 @@ int main(int argc,char **argv) {
 #endif			
 	}
 
-#ifdef USE_PORTAL
 	mppa_close_barrier(global_barrier);
+
+#ifdef USE_PORTAL
 	mppa_close_portal(write_portal);
 	mppa_close_portal(read_portal);
 #endif
@@ -98,4 +104,3 @@ int main(int argc,char **argv) {
 
 	return 0;
 }
-

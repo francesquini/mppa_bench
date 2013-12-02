@@ -3,11 +3,7 @@
 #define MB 1024 * KB
 
 #define MAX_BUFFER_SIZE 1 * MB
-#define NB_EXEC 1
-
-// Select PORTAL or CHANNEL
-#define USE_PORTAL
-// #define USE_CHANNEL
+#define NB_EXEC 10
 
 #ifdef DEBUG
 #define LOG(...) printf(__VA_ARGS__); fflush(stdout)
@@ -18,7 +14,6 @@
 typedef struct {
 	int cluster_id;
 } rqueue_msg_t;
-
 
 void init_buffer(char *buffer, int size);
 void fill_buffer(char *buffer, int size, int cluster_id);

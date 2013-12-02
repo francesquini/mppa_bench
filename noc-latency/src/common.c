@@ -1,4 +1,5 @@
 #include "common.h"
+#include <stdio.h>
 
 void
 init_buffer(char *buffer, int size)

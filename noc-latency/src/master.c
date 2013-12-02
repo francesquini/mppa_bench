@@ -75,40 +75,44 @@ main(int argc, char **argv)
 	// Spawn slave processes
 	spawn_slaves("slave", nb_clusters, 1);
 
-#ifdef USE_PORTAL
 	// Initialize global barrier
-	barrier_t *global_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
+	barrier_t *global_barrier = mppa_create_master_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
 
+#ifdef USE_PORTAL
 	// Initialize communication portal to receive messages from clusters
-	portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:2", comm_buffer, MAX_BUFFER_SIZE * nb_clusters, nb_clusters, NULL);
+	portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:3", comm_buffer, MAX_BUFFER_SIZE * nb_clusters, nb_clusters, NULL);
 
 	// Initialize communication portals to send messages to clusters (one portal per cluster)
 	portal_t **write_portals = (portal_t **) malloc (sizeof(portal_t *) * nb_clusters);
 	for (i = 0; i < nb_clusters; i++) {
-		sprintf(path, "/mppa/portal/%d:%d", i, 3 + i);
+		sprintf(path, "/mppa/portal/%d:%d", i, 4 + i);
 		write_portals[i] = mppa_create_write_portal(path, comm_buffer, MAX_BUFFER_SIZE);
 	}
 #endif	
 
 #ifdef USE_CHANNEL
+	int base_tag;
+
 	channel_t **write_channels = (channel_t **) malloc (sizeof(channel_t *) * nb_clusters);
+	
+	base_tag = 3;
 	for (i = 0; i < nb_clusters; i++) {
-		sprintf(path, "/mppa/channel/%d:%d/%d:%d", i, i + 1, 128, i + 17);
+		sprintf(path, "/mppa/channel/%d:%d/%d:%d", i, base_tag + i, 128, (base_tag + i) + nb_clusters);
 		write_channels[i] = mppa_create_write_channel(path);
 	}
 
 	channel_t **read_channels = (channel_t **) malloc (sizeof(channel_t *) * nb_clusters);
+	
+	base_tag = 3 + (2 * nb_clusters);
 	for (i = 0; i < nb_clusters; i++) {
-		sprintf(path, "/mppa/channel/%d:%d/%d:%d", 128, 34 + i, i, i + 50);
+		sprintf(path, "/mppa/channel/%d:%d/%d:%d", 128, base_tag + i, i, (base_tag + i) + nb_clusters);
 		read_channels[i] = mppa_create_read_channel(path);
 	}
 #endif	
 
-	printf ("type;exec;direction;size;time\n");
+	printf ("type;exec;direction;nb_clusters;size;time\n");
 
-#ifdef USE_PORTAL
 	mppa_barrier_wait(global_barrier);
-#endif
 
 	int nb_exec;
 	for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
@@ -129,7 +133,7 @@ main(int argc, char **argv)
 				mppa_async_write_wait_portal(write_portals[j]);
 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf("portal;%d;%s;%d;%llu\n", nb_exec, "master-slave", i, exec_time);
+			printf("portal;%d;%s;%d;%d;%llu\n", nb_exec, "master-slave", nb_clusters, i, exec_time);
 		}
 
 		// ----------- SLAVE -> MASTER ---------------	
@@ -143,7 +147,7 @@ main(int argc, char **argv)
 			mppa_async_read_wait_portal(read_portal);
 			
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("portal;%d;%s;%d;%llu\n", nb_exec, "slave-master", i, exec_time);
+			printf ("portal;%d;%s;%d;%d;%llu\n", nb_exec, "slave-master", nb_clusters, i, exec_time);
 		}
 #endif
 
@@ -157,7 +161,7 @@ main(int argc, char **argv)
 				mppa_write_channel(write_channels[j], comm_buffer, i);
 			
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("channel;%d;%s;%d;%llu\n", nb_exec, "master-slave", i, exec_time);
+			printf ("channel;%d;%s;%d;%d;%llu\n", nb_exec, "master-slave", nb_clusters, i, exec_time);
 		}		
 		
 		// ----------- SLAVE -> MASTER ---------------	
@@ -168,7 +172,7 @@ main(int argc, char **argv)
 				mppa_read_channel(read_channels[j], comm_buffer, i);
 
 			exec_time = mppa_diff_time(start_time, mppa_get_time());
-			printf ("channel;%d;%s;%d;%llu\n", nb_exec, "slave-master", i, exec_time);
+			printf ("channel;%d;%s;%d;%d;%llu\n", nb_exec, "slave-master", nb_clusters, i, exec_time);
 		}
 #endif
 	}
@@ -186,8 +190,9 @@ main(int argc, char **argv)
 
 	LOG("MASTER: clusters finished\n");
 
-#ifdef USE_PORTAL
 	mppa_close_barrier(global_barrier);
+
+#ifdef USE_PORTAL
 	mppa_close_portal(read_portal);
 	for (i = 0; i < nb_clusters; i++)
 		mppa_close_portal(write_portals[i]);

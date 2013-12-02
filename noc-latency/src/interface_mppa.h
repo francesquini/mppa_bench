@@ -13,8 +13,8 @@
  * GLOBAL CONSTANTS
  */
 
-#define BARRIER_SYNC_MASTER "/mppa/sync/128:62"
-#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:63"
+#define BARRIER_SYNC_MASTER "/mppa/sync/128:1"
+#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:2"
 
 #define TRUE 1
 #define FALSE 0
