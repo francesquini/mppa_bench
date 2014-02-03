@@ -18,10 +18,10 @@ error <- function (values, percentage) {
     return (qt (t, df = n - 1) * sd (values) / sqrt (n))
 }
 
-plot_latency <- function (f, er, scale=NULL) {
+plot_latency <- function (f, er, yscale=NULL, xscale=NULL) {
     x <- read_latency (er)
     # inserts error column for obtaining an 95% conf. interval
-    x <- ddply (x, .(processor, size), summarise, e = error (time, 0.95), time = mean (time))
+    x <- ddply (x, .(processor, size), summarise, e = error (time / 1000, 0.95), time = mean (time / 1000))
     plot <- ggplot (x, aes (factor(size), time, group = processor, colour = processor, shape = processor)) +
     theme_bw () +
     geom_point() +
@@ -32,24 +32,27 @@ plot_latency <- function (f, er, scale=NULL) {
                  	  alpha = 0.2, linetype = 0) +
     guides(fill=FALSE) +
     xlab ("Size (KB)") +
-    ylab ("Time (us)") +
+    ylab ("Time (ms)") +
     guides(colour = guide_legend (nrow = 1)) +
     theme (legend.title = element_blank (),
            legend.position = "bottom",
            legend.direction = "vertical",
-           axis.text.x = element_text(angle = 90, hjust = 1))
+           axis.text.x = element_text(angle = 45, hjust = 1))
 
-	if ( !is.null(scale) )
-		plot <- plot + scale_y_continuous(breaks = c(scale))
+	if ( !is.null(yscale) )
+		plot <- plot + scale_y_continuous(breaks = c(yscale))
+
+	if ( !is.null(xscale) )
+		plot <- plot + scale_x_discrete(breaks = c(xscale))
 	
 	#plot
 
-    ggsave (plot, file=f, width=16, height=8)
+    ggsave (plot, file=f, width=5, height=5)
 }
 
 #------------------------------------------------------------------------------
 
-plot_latency ("data_mppa.pdf", "data_mppa.csv")
+plot_latency ("data_mppa.pdf", "data_mppa.csv", yscale = seq(0, 300, 25), xscale = c(128, 256, 512, 1024, 2048, 4096))
 plot_latency ("data_x86.pdf", "data_x86.csv")
 
 #file.remove("./Rplots.pdf")
