@@ -27,8 +27,10 @@ int main(int argc,char **argv) {
 
 #ifdef USE_PORTAL	
 	// Initialize communication portals
-	portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:3", comm_buffer, MAX_BUFFER_SIZE);	
-	
+	// portal_t *write_portal = mppa_create_write_portal("/mppa/portal/128:3", comm_buffer, MAX_BUFFER_SIZE, 128);
+	sprintf(path, "/mppa/portal/%d:3", 128 + (cluster_id % 4));
+	portal_t *write_portal = mppa_create_write_portal(path, comm_buffer, MAX_BUFFER_SIZE, 128 + (cluster_id % 4));
+
 	// Initialize communication portal to receive messages from IO-node
 	sprintf(path, "/mppa/portal/%d:%d", cluster_id, 4 + cluster_id);
 	portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, MAX_BUFFER_SIZE, 1, NULL);
@@ -56,7 +58,8 @@ int main(int argc,char **argv) {
 
 #ifdef USE_PORTAL
 		// ----------- MASTER -> SLAVE ---------------
-		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
 			mppa_barrier_wait(global_barrier);
 
 			// Block until receive the asynchronous write and prepare for next asynchronous writes		
@@ -64,7 +67,8 @@ int main(int argc,char **argv) {
 		}
 
 		// ----------- SLAVE -> MASTER ---------------
-		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
+		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
 			mppa_barrier_wait(global_barrier);
 			
 			// post asynchronous write

@@ -2,7 +2,7 @@
 #define KB 1024
 #define MB 1024 * KB
 
-#define MAX_BUFFER_SIZE 1 * MB
+#define MAX_BUFFER_SIZE 1 * MB + MB / 2
 #define NB_EXEC 10
 
 #ifdef DEBUG

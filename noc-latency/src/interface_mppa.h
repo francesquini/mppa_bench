@@ -61,7 +61,7 @@ typedef struct {
 void set_path_name(char *path, char *template_path, int rx, int tag);
 
 portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t));
-portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size);
+portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size, int receiver_rank);
 void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
 void mppa_async_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
 void mppa_async_write_wait_portal(portal_t *portal);
