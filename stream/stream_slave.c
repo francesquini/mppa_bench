@@ -50,6 +50,8 @@
 # include <mppaipc.h>
 # include <mppa/osconfig.h>
 
+//#define _OPENMP 1
+
 /*-----------------------------------------------------------------------
  * INSTRUCTIONS:
  *

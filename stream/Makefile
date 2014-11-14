@@ -1,26 +1,33 @@
+# set the target platform (hardware or simulator)
+platforms := hardware
 
-K1_TOOLCHAIN_DIR=/usr/local/k1tools
+# flags
+cflags := -O
+k1-lflags := -lmppaipc
 
-IMAGE_MASTER_SLAVE=stream_master_slave
-IMAGE_MASTER=stream_master
-BIN_MASTER=master
-BIN_SLAVE=stream
-DEBUG=-DDEBUG
+# build two master bins
+# 1) master: master that spawns the stream benchmark to a cluster
+# 2) master_single: master that runs stream benchmark locally (IO-node)
+io-bin := master master_single
+master-srcs := master.c 
+master_single-srcs := stream_master.c
 
-all: $(IMAGE_MASTER_SLAVE).mpk $(IMAGE_MASTER).mpk
+# build slave bin
+cluster-bin := stream_slave
+stream_slave-srcs := stream_slave.c
+stream_slave-cflags := -fopenmp
+stream_slave-lflags := -fopenmp -lgomp
 
-$(IMAGE_MASTER_SLAVE).mpk: master.c stream_slave.c
-	k1-gcc -O -mos=rtems $(DEBUG) $(BIN_MASTER).c -o $(BIN_MASTER) -lmppaipc
-	k1-gcc -O -mos=nodeos -DOMP $(DEBUG) $(BIN_SLAVE)_slave.c -o $(BIN_SLAVE) -lmppaipc -fopenmp 
-	rm -f $(IMAGE_MASTER_SLAVE).mpk
-	createImage.rb --clusters $(BIN_SLAVE) --boot=$(BIN_MASTER) -T $(IMAGE_MASTER_SLAVE).mpk	
-	rm -f $(BIN_MASTER) $(BIN_SLAVE)
+# build image (master + slave)
+# the first binary will be the one booted on the IO!
+multibin_master_slave-objs := master stream_slave
+multibin_master_slave-name := stream_master_slave.img
 
-$(IMAGE_MASTER).mpk: stream_master.c
-	k1-gcc -O -mos=rtems $(DEBUG) $(BIN_SLAVE)_master.c -o $(BIN_SLAVE) -lmppaipc
-	rm -f $(IMAGE_MASTER).mpk
-	createImage.rb --boot=$(BIN_SLAVE) -T $(IMAGE_MASTER).mpk	
-	rm -f $(BIN_SLAVE)
+multibin_master_single-objs := master_single
+multibin_master_single-name := stream_master_single.img
 
-clean:
-	rm -f *~ $(BIN_MASTER) $(BIN_SLAVE) $(IMAGE_MASTER_SLAVE).mpk $(IMAGE_MASTER).mpk
+# create the following multibinaries
+mppa-bin := multibin_master_slave multibin_master_single
+
+# must be at the end of the makefile!
+include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.mppaipc
