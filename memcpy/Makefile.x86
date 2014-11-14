@@ -1,6 +1,6 @@
 
 IMAGE=memcpy
-SRC=main
+SRC=main_x86
 # DEBUG=-DDEBUG
 DEBUG=
 
