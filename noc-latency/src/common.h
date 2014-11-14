@@ -1,3 +1,4 @@
+#define USE_PORTAL 1
 
 #define KB 1024
 #define MB 1024 * KB

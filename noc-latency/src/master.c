@@ -102,8 +102,6 @@ main(int argc, char **argv)
 		read_portals[i] = mppa_create_read_portal(path, comm_buffer, MAX_BUFFER_SIZE * nb_clusters, nb_msgs_per_dma[i], NULL);
 	}
 
-	// DMA-0 (128)
-	// portal_t *read_portal = mppa_create_read_portal("/mppa/portal/128:3", comm_buffer, MAX_BUFFER_SIZE * nb_clusters, nb_clusters, NULL);
 
 	// Initialize communication portals to send messages to clusters (one portal per cluster)
 	portal_t **write_portals = (portal_t **) malloc (sizeof(portal_t *) * nb_clusters);
@@ -142,8 +140,7 @@ main(int argc, char **argv)
 
 #ifdef USE_PORTAL
 		// ----------- MASTER -> SLAVE ---------------	
-		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
-		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 			mppa_barrier_wait(global_barrier);
 
 			start_time = mppa_get_time();
@@ -161,8 +158,7 @@ main(int argc, char **argv)
 		}
 
 		// ----------- SLAVE -> MASTER ---------------	
-		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
-		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 			mppa_barrier_wait(global_barrier);
 
 			start_time = mppa_get_time();
@@ -210,8 +206,8 @@ main(int argc, char **argv)
 	for (pid = 0; pid < nb_clusters; pid++) {
 		status = 0;
 		if ((status = mppa_waitpid(pid, &status, 0)) < 0) {
-			printf("[I/O] Waitpid on cluster %d failed.\n", pid);
-			mppa_exit(status);
+		  printf("[I/O] Waitpid on cluster %d failed.\n", pid);
+		  mppa_exit(status);
 		}
 	}
 

@@ -58,8 +58,7 @@ int main(int argc,char **argv) {
 
 #ifdef USE_PORTAL
 		// ----------- MASTER -> SLAVE ---------------
-		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
-		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 			mppa_barrier_wait(global_barrier);
 
 			// Block until receive the asynchronous write and prepare for next asynchronous writes		
@@ -67,8 +66,7 @@ int main(int argc,char **argv) {
 		}
 
 		// ----------- SLAVE -> MASTER ---------------
-		// for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
-		for (i = 1 * KB; i <= MAX_BUFFER_SIZE; i += 128 * KB) {
+		for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
 			mppa_barrier_wait(global_barrier);
 			
 			// post asynchronous write
