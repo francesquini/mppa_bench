@@ -231,8 +231,9 @@ rqueue_t *mppa_create_read_rqueue (int message_size, int rx_id, int rx_tag, char
 }
 
 void mppa_init_read_rqueue(rqueue_t *rqueue, int credit) {
-	int status = mppa_ioctl(rqueue->file_descriptor, MPPA_RX_SET_CREDITS, credit);
-	assert(status == 0);
+  // MPPA_RX_SET_CREDITS doesn't exist anymore???
+  //int status = mppa_ioctl(rqueue->file_descriptor, MPPA_RX_SET_CREDITS, credit);
+  //	assert(status == 0);
 }
 
 rqueue_t *mppa_create_write_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag) {
