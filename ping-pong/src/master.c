@@ -90,8 +90,8 @@ main(int argc, char **argv)
   }
   
   printf ("type;exec;size;slave;round_trip_time;latency\n");
-  
-  for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {  
+
+  for (nb_exec = 1; nb_exec <= NB_EXEC + 1; nb_exec++) {  
     for (cluster = 0; cluster < nb_clusters; cluster++) {
       mppa_barrier_wait(global_barrier);
     
@@ -104,7 +104,10 @@ main(int argc, char **argv)
       mppa_async_read_wait_portal(read_portals[cluster % 4]);
       
       round_trip_time = mppa_diff_time(start_time, mppa_get_time());
-      printf("portal;%d;%d;%d;%llu;%.2f\n", nb_exec, buffer_size, cluster, round_trip_time, 1.0*round_trip_time/2);
+      
+      // don't consider the last run to avoid timing errors...
+      if (nb_exec < NB_EXEC + 1)
+	printf("portal;%d;%d;%d;%llu;%.2f\n", nb_exec, buffer_size, cluster, round_trip_time, 1.0*round_trip_time/2);
 
       // prepare this portal for the next write
       mppa_async_write_wait_portal(write_portals[cluster]);

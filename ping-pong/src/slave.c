@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   
   LOG("Slave %d started\n", cluster_id);
   
-  for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
+  for (nb_exec = 1; nb_exec <= NB_EXEC + 1; nb_exec++) {
     for (cluster = 0; cluster < nb_clusters; cluster++) {
       mppa_barrier_wait(global_barrier);
       

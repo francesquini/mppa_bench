@@ -3,7 +3,7 @@
 #define KB 1024
 #define MB 1024 * KB
 
-#define NB_EXEC 31
+#define NB_EXEC 30
 
 #ifdef DEBUG
 #define LOG(...) printf(__VA_ARGS__); fflush(stdout)
