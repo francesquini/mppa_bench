@@ -6,35 +6,36 @@
 #include "interface_mppa.h"
 
 
-int main(int argc,char **argv) {
+int main(int argc, char **argv) {
   char path[25];
   int i;
   int nb_exec;
   int cluster;
 
-  // Global data
-  char *comm_buffer = (char *) malloc(BUFFER_SIZE);
-  assert(comm_buffer != NULL);
-  
-  for(i = 0; i < BUFFER_SIZE; i++)
-    comm_buffer[i] = 0;
-  
   // Set initial parameters
   int nb_clusters = atoi(argv[0]);
   // int nb_threads  = atoi(argv[1]);
   int cluster_id  = atoi(argv[2]);
+  int buffer_size = atoi(argv[3]);
+
+  // Global data
+  char *comm_buffer = (char *) malloc(buffer_size);
+  assert(comm_buffer != NULL);
   
+  for(i = 0; i < buffer_size; i++)
+    comm_buffer[i] = 0;
+    
   // Initialize global barrier
   barrier_t *global_barrier = mppa_create_slave_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
   
   // Initialize communication portals
   sprintf(path, "/mppa/portal/%d:3", 128 + (cluster_id % 4));
-  portal_t *write_portal = mppa_create_write_portal(path, comm_buffer, BUFFER_SIZE, 128 + (cluster_id % 4));
+  portal_t *write_portal = mppa_create_write_portal(path, comm_buffer, buffer_size, 128 + (cluster_id % 4));
   
   // Initialize communication portal to receive messages from IO-node
   // The read_portal is configure so it expects a single message before unblocking
   sprintf(path, "/mppa/portal/%d:%d", cluster_id, 4 + cluster_id);
-  portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, BUFFER_SIZE, 1, NULL);
+  portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, buffer_size, 1, NULL);
   
   LOG("Slave %d started\n", cluster_id);
   
@@ -42,18 +43,16 @@ int main(int argc,char **argv) {
     for (cluster = 0; cluster < nb_clusters; cluster++) {
       mppa_barrier_wait(global_barrier);
       
-      // ping: master ->slave
+      // ping: master -> slave
       // Block until receive the asynchronous write and prepare for next asynchronous writes
       // The cluster will wait for a single message before unblocking
       if(cluster_id == cluster)
 	mppa_async_read_wait_portal(read_portal);
       
       // pong: slave -> master
-      mppa_barrier_wait(global_barrier);
-      
-      // post asynchronous write
       if(cluster_id == cluster) {
-	mppa_async_write_portal(write_portal, comm_buffer, i, cluster_id * BUFFER_SIZE);
+	// post an asynchronous write
+	mppa_async_write_portal(write_portal, comm_buffer, i, cluster_id * buffer_size);
 	// wait for the end of the transfer
 	mppa_async_write_wait_portal(write_portal);
       }
