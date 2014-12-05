@@ -89,7 +89,7 @@ main(int argc, char **argv)
     write_portals[i] = mppa_create_write_portal(path, comm_buffer, buffer_size, i);
   }
   
-  printf ("type;exec;size;slave;round trip time;latency\n");
+  printf ("type;exec;size;slave;round_trip_time;latency\n");
   
   for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {  
     for (cluster = 0; cluster < nb_clusters; cluster++) {
