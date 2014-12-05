@@ -32,6 +32,7 @@ int main(int argc,char **argv) {
   portal_t *write_portal = mppa_create_write_portal(path, comm_buffer, BUFFER_SIZE, 128 + (cluster_id % 4));
   
   // Initialize communication portal to receive messages from IO-node
+  // The read_portal is configure so it expects a single message before unblocking
   sprintf(path, "/mppa/portal/%d:%d", cluster_id, 4 + cluster_id);
   portal_t *read_portal = mppa_create_read_portal(path, comm_buffer, BUFFER_SIZE, 1, NULL);
   
@@ -42,7 +43,8 @@ int main(int argc,char **argv) {
       mppa_barrier_wait(global_barrier);
       
       // ping: master ->slave
-      // Block until receive the asynchronous write and prepare for next asynchronous writes		
+      // Block until receive the asynchronous write and prepare for next asynchronous writes
+      // The cluster will wait for a single message before unblocking
       if(cluster_id == cluster)
 	mppa_async_read_wait_portal(read_portal);
       

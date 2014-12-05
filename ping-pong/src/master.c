@@ -44,7 +44,7 @@ main(int argc, char **argv)
 {
   int status;
   int pid;
-  int i, j;
+  int i;
   int nb_clusters;
   char path[256];
   uint64_t start_time, exec_time_master_slave, exec_time_slave_master;
@@ -60,7 +60,7 @@ main(int argc, char **argv)
   
   mppa_init_time();
   
-  // Spawn slave processes
+  // Spawn slave processes, 1 thread per slave
   spawn_slaves("slave", nb_clusters, 1);
   
   // Initialize global barrier
@@ -70,6 +70,7 @@ main(int argc, char **argv)
   int number_dmas = nb_clusters < 4 ? nb_clusters : 4;
   portal_t **read_portals = (portal_t **) malloc (sizeof(portal_t *) * number_dmas);
   
+  // One message is expected on the DMA to unblock the mppa_async_read_wait_portal function
   for (i = 0; i < number_dmas; i++) {
     sprintf(path, "/mppa/portal/%d:3", 128 + i);
     read_portals[i] = mppa_create_read_portal(path, comm_buffer, BUFFER_SIZE * nb_clusters, 1, NULL);
@@ -101,7 +102,7 @@ main(int argc, char **argv)
       
       start_time = mppa_get_time();
 
-      // receive on the correct DMA
+      // receive on the correct DMA: the slave will send to the correct DMA automatically through mppa_async_write_portal()
       mppa_async_read_wait_portal(read_portals[cluster % 4]);
       exec_time_slave_master = mppa_diff_time(start_time, mppa_get_time());
       
@@ -124,7 +125,6 @@ main(int argc, char **argv)
   
   mppa_close_barrier(global_barrier);
   
-  // mppa_close_portal(read_portal);
   for (i = 0; i < number_dmas; i++)
     mppa_close_portal(read_portals[i]);
   
